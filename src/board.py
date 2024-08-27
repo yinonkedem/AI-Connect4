@@ -1,10 +1,18 @@
 import numpy as np
-#TODO this class will keep the state of the board
+
+DEFAULT_BOARD_LENGTH = 6
+DEFAULT_BOARD_WIDTH = 7
+DEFAULT_NUM_COLORS = 2
+DEFAULT_STRIKE_SIZE = 4
+
 
 class Board:
-    def __init__(self, rows=6, cols=7):
-        self.rows = rows
-        self.cols = cols
+    def _init_(self, strike_size=DEFAULT_STRIKE_SIZE, board_length=DEFAULT_BOARD_LENGTH,
+                 board_width=DEFAULT_BOARD_WIDTH, num_of_colors=DEFAULT_NUM_COLORS):
+        self.strike_size = strike_size
+        self.num_of_colors = num_of_colors
+        self.rows = board_length
+        self.cols = board_width
         self.board = np.zeros((self.rows, self.cols), dtype=int)
         self.last_move = None
 
@@ -22,7 +30,7 @@ class Board:
             raise ValueError(f"Column {col} is full")
 
         for row in range(self.rows - 1, -1, -1):
-            if self.board[row, col] == 0:
+            if self.board[row, col] == 0:  # empty place
                 self.board[row, col] = player
                 self.last_move = (row, col)
                 break
@@ -38,7 +46,7 @@ class Board:
         # Directions to check: horizontal, vertical, and both diagonals
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
         for dr, dc in directions:
-            if self.count_consecutive_pieces(row, col, dr, dc, player) >= 4:
+            if self.count_consecutive_pieces(row, col, dr, dc, player) >= self.strike_size:
                 return player
 
         return None
@@ -72,20 +80,19 @@ class Board:
         self.board = np.zeros((self.rows, self.cols), dtype=int)
         self.last_move = None
 
-    def __str__(self):
+    def _str_(self):
         """Return a string representation of the board."""
         return "\n".join(" ".join(str(int(cell)) for cell in row) for row in self.board)
 
-
 # Example usage:
-if __name__ == "__main__":
-    board = Board()
-    board.make_move(3, 1)
-    board.make_move(3, 2)
-    board.make_move(3, 1)
-    board.make_move(3, 2)
-    board.make_move(3, 1)
-    board.make_move(3, 2)
-    board.make_move(3, 1)
-    print(board)
-    print("Winner:", board.check_winner())
+# if _name_ == "_main_":
+#     board = Board()
+#     board.make_move(3, 1)
+#     board.make_move(3, 2)
+#     board.make_move(3, 1)
+#     board.make_move(3, 2)
+#     board.make_move(3, 1)
+#     board.make_move(3, 2)
+#     board.make_move(3, 1)
+#     print(board)
+#     print("Winner:", board.check_winner())
