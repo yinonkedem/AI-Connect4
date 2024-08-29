@@ -29,16 +29,16 @@ class MinmaxAgent(Agent):
         and self.evaluationFunction.
         """
 
-        def helper(game_sate, agent, depth):
-            if depth == 0 or game_sate.done:
-                return self.evaluation_function(game_sate), Action.STOP
+        def helper(game_state, agent, depth):
+            if depth == 0 or game_state.done:
+                return self.evaluation_function(game_state), Action.STOP
 
             if agent == 0:
                 max_val = -math.inf
                 best_action = None
-                player_legal_actions = game_sate.get_legal_actions(agent)
+                player_legal_actions = game_state.get_legal_actions(agent)
                 for action in player_legal_actions:
-                    successor_per_action = game_sate.generate_successor(agent, action)
+                    successor_per_action = game_state.generate_successor(agent, action)
                     new_val, new_action = helper(successor_per_action, 1, depth)
                     if new_val > max_val:
                         max_val = new_val
@@ -48,9 +48,9 @@ class MinmaxAgent(Agent):
             else:
                 min_val = math.inf
                 best_action = None
-                player_legal_actions = game_sate.get_legal_actions(agent)
+                player_legal_actions = game_state.get_legal_actions(agent)
                 for action in player_legal_actions:
-                    successor_per_action = game_sate.generate_successor(agent, action)
+                    successor_per_action = game_state.generate_successor(agent, action)
                     new_val, new_action = helper(successor_per_action, 0, depth - 1)
                     if new_val < min_val:
                         min_val = new_val
