@@ -1,7 +1,9 @@
 import math
-import numpy as np
 import abc
-from game import Action
+
+
+def default_score_evaluation_function(game_state):
+    pass
 
 
 class Agent(object):
@@ -12,9 +14,10 @@ class Agent(object):
     This is an abstract class that should not be instantiated directly.
     """
 
-    def __init__(self, evaluation_function='scoreEvaluationFunction', depth=2):
+    def __init__(self, evaluation_function=default_score_evaluation_function, depth=2):
         # self.evaluation_function =  TODO write a default evaluation function, maybe in utils.py
         self.depth = depth
+        self.evaluation_function = evaluation_function
 
     @abc.abstractmethod
     def get_action(self, game_state):
@@ -31,15 +34,15 @@ class MinmaxAgent(Agent):
 
         def helper(game_state, agent, depth):
             if depth == 0 or game_state.done:
-                return self.evaluation_function(game_state), Action.STOP
+                return self.evaluation_function(game_state), None
 
-            if agent == 0:
+            if agent == 1:
                 max_val = -math.inf
                 best_action = None
-                player_legal_actions = game_state.get_legal_actions(agent)
-                for action in player_legal_actions:
-                    successor_per_action = game_state.generate_successor(agent, action)
-                    new_val, new_action = helper(successor_per_action, 1, depth)
+                legal_actions = game_state.get_legal_actions()
+                for action in legal_actions:
+                    successor_per_action = game_state.generate_successor(action)
+                    new_val, new_action = helper(successor_per_action, 2, depth)
                     if new_val > max_val:
                         max_val = new_val
                         best_action = action
@@ -48,16 +51,16 @@ class MinmaxAgent(Agent):
             else:
                 min_val = math.inf
                 best_action = None
-                player_legal_actions = game_state.get_legal_actions(agent)
-                for action in player_legal_actions:
-                    successor_per_action = game_state.generate_successor(agent, action)
-                    new_val, new_action = helper(successor_per_action, 0, depth - 1)
+                legal_actions = game_state.get_legal_actions()
+                for action in legal_actions:
+                    successor_per_action = game_state.generate_successor(action)
+                    new_val, new_action = helper(successor_per_action, 1, depth - 1)
                     if new_val < min_val:
                         min_val = new_val
                         best_action = action
                 return min_val, best_action
 
-        agent = 0
+        agent = 1
         return helper(game_state, agent, self.depth)[1]
 
 

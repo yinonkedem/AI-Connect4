@@ -1,6 +1,16 @@
+from board_display import NormalDisplay
+from game import Game
+from agents import MinmaxAgent
+from game_state import GameState
+
+
 def main():
-    pass
-    # TODO - this class will run the game. init the players in main and init the game
+    display = NormalDisplay()
+    agent = MinmaxAgent()
+    opponent_agent = MinmaxAgent()
+    state = GameState()
+    game_runner = Game(agent=agent, opponent_agent=opponent_agent, display=display, state=state)
+    game_runner._game_loop()
 
 
 if __name__ == '__main__':
