@@ -10,7 +10,7 @@ def main():
     opponent_agent = MinmaxAgent()
     state = GameState()
     game_runner = Game(agent=agent, opponent_agent=opponent_agent, display=display, state=state)
-    game_runner._game_loop()
+    game_runner.game_loop()
 
 
 if __name__ == '__main__':

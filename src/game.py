@@ -6,7 +6,7 @@ class Game(object):
         self.opponent_agent = opponent_agent
         self._state = state
 
-    def _game_loop(self):
+    def game_loop(self):  # todo only one player each turn
         while not self._state.done:
             action = self.agent.get_action(self._state)  # get the agent's chosen action for the current state
             self._state.apply_action(action)

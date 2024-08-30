@@ -38,7 +38,7 @@ class GameState(object):
         if self.check_win(the_row_placed, action):
             self._done = True
             self.winner = self.player_about_to_play
-        elif not self.get_legal_actions():  # todo: what ? from thai - זה כשהלוח מלא ואין מנצח אז יש שוויון
+        elif not self.get_legal_actions():
             self._done = True  # Draw
             self.winner = -1
 
