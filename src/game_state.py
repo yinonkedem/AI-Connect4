@@ -26,21 +26,16 @@ class GameState(object):
 
     def get_legal_actions(self):
         # returns a list of all the cols where dropping a piece is possible
-        return self.board.is_valid_move()
+        return self.board.get_valid_moves()
 
     def apply_action(self, action):
         # drop the piece into the chosen column
-        if self.board[0, action] != 0:
+        if not self.board.is_valid_move(action):
             raise Exception("Illegal action: Column is full.")
-        the_row_to_place = None
-        for row in range(self.num_of_rows - 1, -1, -1):  # finding the lowest row available
-            if self.board[row, action] == 0:
-                the_row_to_place = row
-                self.board[row, action] = self.player_about_to_play
-                break
+        the_row_placed = self.board.make_move(action, self.player_about_to_play)
 
         # Check for a win or draw
-        if self.check_win(the_row_to_place, action):
+        if self.check_win(the_row_placed, action):
             self._done = True
             self.winner = self.player_about_to_play
         elif not self.get_legal_actions():  # todo: what ? from thai - זה כשהלוח מלא ואין מנצח אז יש שוויון
@@ -59,30 +54,13 @@ class GameState(object):
         # Directions to check: horizontal, vertical, and both diagonals
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
         for dr, dc in directions:
-            if self.count_consecutive_pieces(row, col, dr, dc, self.player_about_to_play) >= self.board.get_strike():
+            print(self.board.count_consecutive_pieces(row, col, dr, dc, self.player_about_to_play) )
+            if self.board.count_consecutive_pieces(row, col, dr, dc, self.player_about_to_play) >= self.board.get_strike():
                 return True
 
         return False
 
-    def count_consecutive_pieces(self, row, col, dr, dc, player):
-        """Count consecutive pieces of the same player in a given direction."""
-        count = 0
 
-        # Check one direction
-        r, c = row + dr, col + dc
-        while 0 <= r < self.num_of_rows and 0 <= c < self._num_of_columns and self.board[r, c] == player:
-            count += 1
-            r += dr
-            c += dc
-
-        # Check the opposite direction
-        r, c = row - dr, col - dc
-        while 0 <= r < self.num_of_rows and 0 <= c < self._num_of_columns and self.board[r, c] == player:
-            count += 1
-            r -= dr
-            c -= dc
-
-        return count
 
     # def check_win(self, row, col):
     #     # Check for 4 in a row in all directions
