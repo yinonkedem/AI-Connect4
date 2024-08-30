@@ -35,41 +35,50 @@ class Board:
                 self.last_move = (row, col)
                 break
 
-    def check_winner(self):
-        """Check the board to see if there's a winner after the last move."""
-        if self.last_move is None:
-            return None
+    def get_row(self):
+        return self.rows
 
-        row, col = self.last_move
-        player = self.board[row, col]
+    def get_cols(self):
+        return self.cols
 
-        # Directions to check: horizontal, vertical, and both diagonals
-        directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
-        for dr, dc in directions:
-            if self.count_consecutive_pieces(row, col, dr, dc, player) >= self.strike_size:
-                return player
+    def get_strike(self):
+        return self.strike_size
 
-        return None
-
-    def count_consecutive_pieces(self, row, col, dr, dc, player):
-        """Count consecutive pieces of the same player in a given direction."""
-        count = 1
-
-        # Check one direction
-        r, c = row + dr, col + dc
-        while 0 <= r < self.rows and 0 <= c < self.cols and self.board[r, c] == player:
-            count += 1
-            r += dr
-            c += dc
-
-        # Check the opposite direction
-        r, c = row - dr, col - dc
-        while 0 <= r < self.rows and 0 <= c < self.cols and self.board[r, c] == player:
-            count += 1
-            r -= dr
-            c -= dc
-
-        return count
+    # def check_winner(self):
+    #     """Check the board to see if there's a winner after the last move."""
+    #     if self.last_move is None:
+    #         return None
+    #
+    #     row, col = self.last_move
+    #     player = self.board[row, col]
+    #
+    #     # Directions to check: horizontal, vertical, and both diagonals
+    #     directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+    #     for dr, dc in directions:
+    #         if self.count_consecutive_pieces(row, col, dr, dc, player) >= self.strike_size:
+    #             return player
+    #
+    #     return None
+    #
+    # def count_consecutive_pieces(self, row, col, dr, dc, player):
+    #     """Count consecutive pieces of the same player in a given direction."""
+    #     count = 1
+    #
+    #     # Check one direction
+    #     r, c = row + dr, col + dc
+    #     while 0 <= r < self.rows and 0 <= c < self.cols and self.board[r, c] == player:
+    #         count += 1
+    #         r += dr
+    #         c += dc
+    #
+    #     # Check the opposite direction
+    #     r, c = row - dr, col - dc
+    #     while 0 <= r < self.rows and 0 <= c < self.cols and self.board[r, c] == player:
+    #         count += 1
+    #         r -= dr
+    #         c -= dc
+    #
+    #     return count
 
     def is_full(self):
         """Check if the board is full (no more valid moves)."""
