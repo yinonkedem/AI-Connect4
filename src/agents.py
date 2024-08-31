@@ -3,7 +3,10 @@ import abc
 
 
 def default_score_evaluation_function(game_state):
-    pass
+    if game_state.done:
+        return 100
+    else:
+        return 0
 
 
 class Agent(object):
@@ -14,8 +17,7 @@ class Agent(object):
     This is an abstract class that should not be instantiated directly.
     """
 
-    def __init__(self, evaluation_function=default_score_evaluation_function, depth=2):
-        # self.evaluation_function =  TODO write a default evaluation function, maybe in utils.py
+    def __init__(self, evaluation_function=default_score_evaluation_function, depth=1):
         self.depth = depth
         self.evaluation_function = evaluation_function
 

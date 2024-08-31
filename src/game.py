@@ -11,6 +11,7 @@ class Game(object):
             action = self.agent.get_action(self._state)  # get the agent's chosen action for the current state
             self._state.apply_action(action)
             opponent_action = self.opponent_agent.get_action(self._state)
-            self._state.apply_opponent_action(opponent_action)
+            self._state.apply_action(opponent_action)
             self.display.update_state(self._state, action, opponent_action)
+            print ("\n\n")
         return self._state.winner
