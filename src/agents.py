@@ -9,6 +9,31 @@ def default_score_evaluation_function(game_state):
         return 0
 
 
+def default_evaluation_function(game_state):
+    max_consecutive_range = 0
+    for row in range(game_state.num_of_rows):
+        for col in range(game_state.num_of_columns):
+            if game_state.board.board[row][col] == game_state.player_about_to_play:
+                val = 1  # we found one piece on the board in that color
+                directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+                for dr, dc in directions:
+                    val = game_state.board.count_consecutive_pieces(row, col, dr, dc, game_state.player_about_to_play)
+                    if val > max_consecutive_range:
+                        max_consecutive_range = val
+    if max_consecutive_range == 0:
+        flag = False
+        for row in range(game_state.num_of_rows - 1, -1, -1):
+            for col in range(game_state.num_of_columns):
+                if game_state.board.board[row, col] == 0:  # empty
+                    max_consecutive_range = row
+                    flag = True
+            if flag:
+                break
+    else:
+        max_consecutive_range = 2 * max_consecutive_range
+    return max_consecutive_range
+
+
 class Agent(object):
     """
     This class provides some common elements to all of our agents. Any methods defined here will be available
@@ -17,7 +42,8 @@ class Agent(object):
     This is an abstract class that should not be instantiated directly.
     """
 
-    def __init__(self, evaluation_function=default_score_evaluation_function, depth=1):
+    def __init__(self, evaluation_function=default_evaluation_function, depth=2):
+        self.evaluation_function = evaluation_function
         self.depth = depth
         self.evaluation_function = evaluation_function
 

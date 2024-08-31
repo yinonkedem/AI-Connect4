@@ -10,9 +10,9 @@ def main():
     opponent_agent = MinmaxAgent()
     state = GameState()
     game_runner = Game(agent=agent, opponent_agent=opponent_agent, display=display, state=state)
-    game_runner.game_loop()
+    winning_player = game_runner.game_loop()
+    print("the winner is :" + str(winning_player))
 
 
 if __name__ == '__main__':
     main()
-    input("Press Enter to continue...")

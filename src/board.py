@@ -1,9 +1,9 @@
 import numpy as np
 
-DEFAULT_BOARD_LENGTH = 2
-DEFAULT_BOARD_WIDTH = 3
+DEFAULT_BOARD_LENGTH = 6
+DEFAULT_BOARD_WIDTH = 7
 DEFAULT_NUM_COLORS = 2
-DEFAULT_STRIKE_SIZE = 2
+DEFAULT_STRIKE_SIZE = 3
 
 
 class Board:
@@ -80,9 +80,14 @@ class Board:
         self.board = np.zeros((self.rows, self.cols), dtype=int)
         self.last_move = None
 
-    def _str_(self):
+    def __str__(self):
         """Return a string representation of the board."""
-        return "\n".join(" ".join(str(int(cell)) for cell in row) for row in self.board)
+        str_to_print = ''
+        for row in self.board:
+            str_row = ' '.join(str(cell) for cell in row)
+            str_to_print += str_row + '\n'
+        str_to_print += '-' * (self.number_of_cols * 2 - 1)  # Print a separator line
+        return str_to_print
 
 
 

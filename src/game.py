@@ -10,6 +10,9 @@ class Game(object):
         while not self._state.done:
             action = self.agent.get_action(self._state)  # get the agent's chosen action for the current state
             self._state.apply_action(action)
+            if self._state.done:
+                print(self._state.board.__str__())
+                break
             opponent_action = self.opponent_agent.get_action(self._state)
             self._state.apply_action(opponent_action)
             self.display.update_state(self._state, action, opponent_action)

@@ -11,10 +11,10 @@ class GameState(object):
         if board is None:
             board = Board()
         self.board = board
-        self.num_of_rows, self._num_of_columns = board.number_of_rows, board.number_of_cols
+        self.num_of_rows, self.num_of_columns = board.number_of_rows, board.number_of_cols
 
     def done(self):
-        return self._done
+        return self.done
 
     def current_player(self):
         return self.player_about_to_play
@@ -34,10 +34,10 @@ class GameState(object):
 
         # Check for a win or draw
         if self.check_win(the_row_placed, action):
-            self._done = True
+            self.done = True
             self.winner = self.player_about_to_play
         elif not self.get_legal_actions():
-            self._done = True  # Draw
+            self.done = True  # Draw
             self.winner = -1
 
         # Switch players
