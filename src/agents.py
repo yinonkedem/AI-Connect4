@@ -2,11 +2,30 @@ import math
 import abc
 
 
-def default_score_evaluation_function(game_state):
-    if game_state.done:
-        return 100
+def score_evaluation_function(game_state):
+    max_consecutive_range = 0
+    for row in range(game_state.num_of_rows):
+        for col in range(game_state.num_of_columns):
+            if game_state.board.board[row][col] == game_state.player_about_to_play:
+                val = 1  # we found one piece on the board in that color
+                directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
+                for dr, dc in directions:
+                    val += game_state.board.count_consecutive_pieces(row, col, dr, dc,
+                                                                     game_state.player_about_to_play)
+                    if val > max_consecutive_range:
+                        max_consecutive_range = val
+    if max_consecutive_range == 0:  # there are no stones of the current player on the board
+        flag = False
+        for row in range(game_state.num_of_rows - 1, -1, -1):
+            for col in range(game_state.num_of_columns):
+                if game_state.board.board[row, col] == 0:  # empty
+                    max_consecutive_range = row
+                    flag = True
+            if flag:
+                break
     else:
-        return 0
+        max_consecutive_range = 2 * max_consecutive_range
+    return max_consecutive_range
 
 
 class Agent(object):
@@ -17,7 +36,7 @@ class Agent(object):
     This is an abstract class that should not be instantiated directly.
     """
 
-    def __init__(self, evaluation_function=default_score_evaluation_function, depth=1):
+    def __init__(self, evaluation_function=score_evaluation_function, depth=2):
         self.depth = depth
         self.evaluation_function = evaluation_function
 
