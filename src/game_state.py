@@ -49,32 +49,10 @@ class GameState(object):
         # Directions to check: horizontal, vertical, and both diagonals
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
         for dr, dc in directions:
-            if self.board.count_consecutive_pieces(row, col, dr, dc, self.player_about_to_play) >= self.board.get_strike():
+            if self.board.count_consecutive_pieces(row, col, dr, dc, self.player_about_to_play) == self.board.get_strike():
                 return True
 
         return False
-
-
-
-    # def check_win(self, row, col):
-    #     # Check for 4 in a row in all directions
-    #     def check_direction(delta_row, delta_col):
-    #         count = 0
-    #         for d in [-3, -2, -1, 0, 1, 2, 3]:
-    #             r, c = row + d * delta_row, col + d * delta_col
-    #             if 0 <= r < self._num_of_rows and 0 <= c < self._num_of_columns and self._board[
-    #                 r, c] == self.player_about_to_play:
-    #                 count += 1
-    #                 if count == 4:
-    #                     return True
-    #             else:
-    #                 count = 0
-    #         return False
-    #
-    #     return (check_direction(1, 0) or  # Vertical
-    #             check_direction(0, 1) or  # Horizontal
-    #             check_direction(1, 1) or  # Diagonal /
-    #             check_direction(1, -1))  # Diagonal \
 
     def generate_successor(self, action):
         successor = GameState(board=self.board.copy(),

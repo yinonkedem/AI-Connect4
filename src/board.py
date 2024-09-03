@@ -58,6 +58,8 @@ class Board:
         # Check one direction
         if self.board[row][col] == player:
             count += 1
+        else:
+            return 0
         r, c = row + dr, col + dc
         while 0 <= r < self.number_of_rows and 0 <= c < self.number_of_cols and self.board[r, c] == player:
             count += 1
@@ -70,18 +72,20 @@ class Board:
             count += 1
             r -= dr
             c -= dc
-
         return count
 
     def is_full(self):
         """Check if the board is full (no more valid moves)."""
-        return all(self.board[0, col] != 0 for col in range(self.number_of_cols))
+        return all(self.board[0, col] != 0 for col in range(self.cols))
 
     def reset(self):
         """Reset the board for a new game."""
-        self.board = np.zeros((self.number_of_rows, self.number_of_cols), dtype=int)
+        self.board = np.zeros((self.rows, self.cols), dtype=int)
         self.last_move = None
 
     def _str_(self):
         """Return a string representation of the board."""
         return "\n".join(" ".join(str(int(cell)) for cell in row) for row in self.board)
+
+    def get_player(self, row,col):
+        return self.board[row][col]

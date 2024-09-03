@@ -1,13 +1,13 @@
 from board_display import NormalDisplay
 from game import Game
-from agents import MinmaxAgent
+from agents import MinmaxAgent, RandomAgent
 from game_state import GameState
 
 
 def main():
     display = NormalDisplay()
     agent = MinmaxAgent()
-    opponent_agent = MinmaxAgent()
+    opponent_agent = RandomAgent()
     state = GameState()
     game_runner = Game(agent=agent, opponent_agent=opponent_agent, display=display, state=state)
     game_runner.game_loop()
