@@ -11,7 +11,7 @@ class GameState(object):
         if board is None:
             board = Board()
         self.board = board
-        self.num_of_rows, self._num_of_columns = board.number_of_rows, board.number_of_cols
+        self.num_of_rows, self.num_of_columns = board.number_of_rows, board.number_of_cols
 
     def is_done(self):
         return self.done

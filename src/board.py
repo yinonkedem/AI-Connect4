@@ -73,76 +73,13 @@ class Board:
 
     def is_full(self):
         """Check if the board is full (no more valid moves)."""
-        return all(self.board[0, col] != 0 for col in range(self.cols))
+        return all(self.board[0, col] != 0 for col in range(self.number_of_cols))
 
     def reset(self):
         """Reset the board for a new game."""
-        self.board = np.zeros((self.rows, self.cols), dtype=int)
+        self.board = np.zeros((self.number_of_rows, self.number_of_cols), dtype=int)
         self.last_move = None
 
     def _str_(self):
         """Return a string representation of the board."""
         return "\n".join(" ".join(str(int(cell)) for cell in row) for row in self.board)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # def check_winner(self):
-    #     """Check the board to see if there's a winner after the last move."""
-    #     if self.last_move is None:
-    #         return None
-    #
-    #     row, col = self.last_move
-    #     player = self.board[row, col]
-    #
-    #     # Directions to check: horizontal, vertical, and both diagonals
-    #     directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
-    #     for dr, dc in directions:
-    #         if self.count_consecutive_pieces(row, col, dr, dc, player) >= self.strike_size:
-    #             return player
-    #
-    #     return None
-    #
-    # def count_consecutive_pieces(self, row, col, dr, dc, player):
-    #     """Count consecutive pieces of the same player in a given direction."""
-    #     count = 1
-    #
-    #     # Check one direction
-    #     r, c = row + dr, col + dc
-    #     while 0 <= r < self.rows and 0 <= c < self.cols and self.board[r, c] == player:
-    #         count += 1
-    #         r += dr
-    #         c += dc
-    #
-    #     # Check the opposite direction
-    #     r, c = row - dr, col - dc
-    #     while 0 <= r < self.rows and 0 <= c < self.cols and self.board[r, c] == player:
-    #         count += 1
-    #         r -= dr
-    #         c -= dc
-    #
-    #     return count
-# Example usage:
-# if _name_ == "_main_":
-#     board = Board()
-#     board.make_move(3, 1)
-#     board.make_move(3, 2)
-#     board.make_move(3, 1)
-#     board.make_move(3, 2)
-#     board.make_move(3, 1)
-#     board.make_move(3, 2)
-#     board.make_move(3, 1)
-#     print(board)
-#     print("Winner:", board.check_winner())
