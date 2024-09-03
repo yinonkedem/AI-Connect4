@@ -56,6 +56,8 @@ class Board:
         count = 0
 
         # Check one direction
+        if self.board[row][col] == player:
+            count += 1
         r, c = row + dr, col + dc
         while 0 <= r < self.number_of_rows and 0 <= c < self.number_of_cols and self.board[r, c] == player:
             count += 1

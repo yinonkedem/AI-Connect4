@@ -6,13 +6,13 @@ def default_evaluation_function(game_state):
     max_consecutive_range = 0
     for row in range(game_state.num_of_rows):
         for col in range(game_state.num_of_columns):
-            if game_state.board.board[row][col] == game_state.player_about_to_play:
-                val = 1  # we found one piece on the board in that color
+            if game_state.board.board[row][col] == 1:
                 directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
                 for dr, dc in directions:
-                    val += game_state.board.count_consecutive_pieces(row, col, dr, dc, game_state.player_about_to_play)
+                    val = game_state.board.count_consecutive_pieces(row, col, dr, dc, 1)
                     if val > max_consecutive_range:
                         max_consecutive_range = val
+
     if max_consecutive_range == 0:  # there are no stones of the current player on the board
         flag = False
         for row in range(game_state.num_of_rows - 1, -1, -1):
@@ -34,14 +34,10 @@ def amount_of_winning_combination(game_state):
     res = 0
 
     for row in range(game_state.num_of_rows):
-        val = row_winning_combination(row, 0, 4, game_state)
-        if val > res:
-            res = val
+        res += row_winning_combination(row, 0, 4, game_state)
 
     for col in range(game_state.num_of_columns):
-        val = col_winning_combination(col, 0, 3, game_state)
-        if val > res:
-            res = val
+        res += col_winning_combination(col, 0, 3, game_state)
 
     return res
 
