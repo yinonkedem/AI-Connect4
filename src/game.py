@@ -6,7 +6,7 @@ class Game(object):
         self.opponent_agent = opponent_agent
         self.state = state
 
-    def game_loop(self):  # todo only one player each turn
+    def game_loop(self):  # todo only one player each turn // it's seems good
         while not self.state.is_done():
             if self.state.player_about_to_play ==1:
                 action = self.agent.get_action(self.state)  # get the agent's chosen action for the current state
@@ -15,6 +15,6 @@ class Game(object):
                 opponent_action = self.opponent_agent.get_action(self.state)
                 self.state.apply_action(opponent_action)
             self.display.update_state(self.state)
-            print ("\n\n")
+            # print ("\n\n")
         self.display.update_state(self.state, True)
         return self.state.winner

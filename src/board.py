@@ -76,11 +76,11 @@ class Board:
 
     def is_full(self):
         """Check if the board is full (no more valid moves)."""
-        return all(self.board[0, col] != 0 for col in range(self.cols))
+        return all(self.board[0, col] != 0 for col in range(self.number_of_cols))
 
     def reset(self):
         """Reset the board for a new game."""
-        self.board = np.zeros((self.rows, self.cols), dtype=int)
+        self.board = np.zeros((self.number_of_rows, self.number_of_cols), dtype=int)
         self.last_move = None
 
     def _str_(self):

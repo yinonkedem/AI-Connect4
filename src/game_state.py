@@ -3,18 +3,48 @@ from board import Board
 
 
 class GameState(object):
-    def __init__(self, board=None, done=False,
-                 player_about_to_play=1):
+    def __init__(self, board=None, done=False, player_about_to_play=1):
+        self.player_about_to_play = player_about_to_play
         self.done = done
         self.winner = None
-        self.player_about_to_play = player_about_to_play
-        if board is None:
-            board = Board()
-        self.board = board
-        self.num_of_rows, self.num_of_columns = board.number_of_rows, board.number_of_cols
+        self.board = Board() if board is None else board
+        self.num_of_rows, self.num_of_columns = self.board.number_of_rows, self.board.number_of_cols
+        self.reset()  # Use reset to initialize the game state
+
+    def reset(self):
+        """
+        Reset the game state to the beginning.
+        """
+        self.board.reset()  # Assuming Board has a reset method to clear the board
+        self.done = False
+        self.winner = None
+        self.player_about_to_play = 1  # Reset to the first player
 
     def is_done(self):
         return self.done
+
+    def check_winner(self):
+        # This is a simplified check for horizontal lines only
+        for row in range(6):  # Assuming board height is 6
+            for col in range(4):  # Only need to check starting columns 0 through 3 for horizontal win
+                if (self.board.board[row, col] == self.board.board[row, col + 1] ==
+                        self.board.board[row, col + 2] == self.board.board[row, col + 3] != 0):
+                    return self.board.board[row, col]  # Return the player number that won
+
+        # Add similar checks for vertical and diagonal wins here
+
+        return 0  # Return 0 if no winner found
+
+    def calculate_reward(self):
+        """
+        Calculate the reward after an action has been applied.
+        """
+        if self.check_winner() == 1:
+            return 1  # Reward for winning
+        elif self.is_done():
+            return -1  # Penalty for losing or draw
+        else:
+            return 0  # No reward or penalty during ongoing game
 
     def current_player(self):
         return self.player_about_to_play
