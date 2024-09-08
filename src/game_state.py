@@ -1,3 +1,5 @@
+import copy
+
 import numpy as np
 from board import Board
 
@@ -35,17 +37,6 @@ class GameState(object):
 
         return 0  # Return 0 if no winner found
 
-    def calculate_reward(self):
-        """
-        Calculate the reward after an action has been applied.
-        """
-        if self.check_winner() == 1:
-            return 1  # Reward for winning
-        elif self.is_done():
-            return -1  # Penalty for losing or draw
-        else:
-            return 0  # No reward or penalty during ongoing game
-
     def current_player(self):
         return self.player_about_to_play
 
@@ -79,7 +70,8 @@ class GameState(object):
         # Directions to check: horizontal, vertical, and both diagonals
         directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
         for dr, dc in directions:
-            if self.board.count_consecutive_pieces(row, col, dr, dc, self.player_about_to_play) == self.board.get_strike():
+            if self.board.count_consecutive_pieces(row, col, dr, dc,
+                                                   self.player_about_to_play) == self.board.get_strike():
                 return True
 
         return False
@@ -89,3 +81,6 @@ class GameState(object):
                               done=self.done, player_about_to_play=self.player_about_to_play)
         successor.apply_action(action)
         return successor
+
+    def deepcopy(self):
+        return copy.deepcopy(self)

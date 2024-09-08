@@ -3,12 +3,32 @@ import abc
 import random
 
 
-# def score_evaluation_function(game_state):
-#     if game_state.done:
-#         return 100
-#     return 0
-#
-def score_evaluation_function(game_state):
+class Agent(object):
+    """
+    This class provides some common elements to all of our agents. Any methods defined here will be available
+    to the MinmaxAgent and AlphaBetaAgent.
+
+    This is an abstract class that should not be instantiated directly.
+    """
+
+    def __init__(self, evaluation_function=None, depth=2):
+        self.depth = depth
+        self.evaluation_function = evaluation_function
+
+    @abc.abstractmethod
+    def get_action(self, game_state):
+        return
+
+
+class RandomAgent(Agent):
+    def __init__(self):
+        super().__init__(evaluation_function=None, depth=0)
+
+    def get_action(self, game_state):
+        return random.choice(game_state.board.get_valid_moves())
+
+
+def minimax_evaluation_function(game_state):
     score = 0
     max_consecutive_range = calculate_current_player_max_consecutive_range(game_state)
     winning_combination = approximate_number_of_future_winning_combinations(game_state)
@@ -68,33 +88,8 @@ def approximate_number_of_future_winning_combinations(game_state):
 
     return res
 
-class Agent(object):
-    """
-    This class provides some common elements to all of our agents. Any methods defined here will be available
-    to the MinmaxAgent and AlphaBetaAgent.
 
-    This is an abstract class that should not be instantiated directly.
-    """
-
-    def __init__(self, player_id, evaluation_function=None, depth=2):
-        self.player_id = player_id
-        self.depth = depth
-        self.evaluation_function = evaluation_function
-
-    @abc.abstractmethod
-    def get_action(self, game_state):
-        return
-
-
-class RandomAgent(Agent):
-    def __init__(self, player_id):
-        super().__init__(player_id=player_id, evaluation_function=None, depth=0)
-
-    def get_action(self, game_state):
-        return random.choice(game_state.board.get_valid_moves())
-
-
-class MinmaxAgent(Agent):
+class MinmaxAgentWithPruning(Agent):
     def get_action(self, game_state):
         """
         Returns the minimax action from the current gameState using self.depth
@@ -138,65 +133,27 @@ class MinmaxAgent(Agent):
         agent = 1
         return helper(game_state, agent, self.depth, -math.inf, math.inf)[1]
 
-# RL is an agent?
-# class QLearningAgent(Agent):
-#     def __init__(self, player_id, learning_rate=0.1, discount_factor=0.95,
-#                  epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995):
-#         super().__init__(player_id)
-#         self.alpha = learning_rate  # Learning rate
-#         self.gamma = discount_factor  # Discount factor
-#         self.epsilon = epsilon  # Initial exploration rate
-#         self.epsilon_min = epsilon_min
-#         self.epsilon_decay = epsilon_decay
-#         self.q_table = {}  # Q-values stored as a dictionary
-#         self.player_id = player_id  # Player ID for identifying which player the agent is
-#
-#     def encode_state(self, board):
-#         """
-#         Encode the board state into a tuple which acts as a key for the Q-table.
-#         Each cell's content is read row-wise to create a hashable state representation.
-#         """
-#         return tuple(tuple(row) for row in board.board)  # Convert board to a tuple of tuples
-#
-#     def get_legal_actions(self, board):
-#         """
-#         Extracts legal actions (column indices that are not full) using the board's method.
-#         """
-#         return board.get_valid_moves()  # Use the Board class's method to get valid moves
-#
-#     def get_action(self, state):
-#         """
-#         Choose an action using the epsilon-greedy strategy.
-#         """
-#         if random.random() < self.epsilon:
-#             return random.choice(self.get_legal_actions(state.board))
-#         else: # this is the evaluation function
-#             state_encoded = self.encode_state(state.board)
-#             q_values = {action: self.q_table.get((state_encoded, action), 0) for action in self.get_legal_actions(state.board)}
-#             return max(q_values, key=q_values.get)  # Action with the highest Q-value
-#
-#     def learn(self, current_state, action, reward, next_state, done):
-#         """
-#         Updates the Q-table based on the agent's experience.
-#         """
-#         curr_state_encoded = self.encode_state(current_state.board)
-#         next_state_encoded = self.encode_state(next_state.board)
-#         best_future_action = max([self.q_table.get((next_state_encoded, a), 0) for a in self.get_legal_actions(next_state.board)], default=0)
-#
-#         current_q_value = self.q_table.get((curr_state_encoded, action), 0)
-#         future_q_value = 0 if done else best_future_action
-#         updated_q_value = current_q_value + self.alpha * (reward + self.gamma * future_q_value - current_q_value)
-#
-#         self.q_table[(curr_state_encoded, action)] = updated_q_value
-#
-#         # Epsilon decay
-#         if done and self.epsilon > self.epsilon_min:
-#             self.epsilon *= self.epsilon_decay
+
+def calculate_reward(game_state):
+    """
+    Calculate the reward after an action has been applied.
+    """
+    if game_state.check_winner() == 1:
+        return 1  # Reward for winning
+    elif game_state.is_done():
+        return -1  # Penalty for losing or draw
+    else:
+        return 0
+
+
+def encode_board_into_one_dimension_array(game_state):
+    state = tuple(tuple(row) for row in game_state.board.board)
+    return state
 
 
 class QLearningAgent:
-    def __init__(self, player_id, learning_rate=0.1, discount_factor=0.9, epsilon=1.0, epsilon_decay=0.995, epsilon_min=0.01):
-        self.player_id = player_id
+    def __init__(self, learning_rate=0.01, discount_factor=0.9,
+                 epsilon=0.3, epsilon_decay=0.995, epsilon_min=0.01):
         self.q_table = {}
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
@@ -204,37 +161,31 @@ class QLearningAgent:
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
 
-    def encode_state(self, board):
-        state = tuple(tuple(row) for row in board.board)
-        # Add more features to state representation here if needed
-        return state
+    def get_q_value(self, game_state, action):
+        return self.q_table.get((game_state, action), 0)
 
-    def get_legal_actions(self, board):
-        return board.get_valid_moves()
-
-    def get_q_value(self, state, action):
-        return self.q_table.get((state, action), 0)
-
-    def choose_action(self, state):
+    def get_action(self, game_state):
+        # gets an action according to the policy
         if random.random() < self.epsilon:
-            return random.choice(self.get_legal_actions(state.board))
+            return random.choice(game_state.get_legal_actions())
         else:
-            encoded_state = self.encode_state(state.board)
-            legal_actions = self.get_legal_actions(state.board)
+            encoded_state = encode_board_into_one_dimension_array(game_state)
+            legal_actions = game_state.get_legal_actions()
             q_values = {action: self.get_q_value(encoded_state, action) for action in legal_actions}
-            return max(q_values, key=q_values.get) if q_values else None
+            return max(q_values) if q_values else 0
 
-    def learn(self, state, action, reward, next_state):
-        current_state_encoded = self.encode_state(state.board)
-        next_state_encoded = self.encode_state(next_state.board)
-        future_rewards = [self.get_q_value(next_state_encoded, a) for a in next_state.get_legal_actions()]
-        best_future_reward = max(future_rewards) if future_rewards else 0
-        old_value = self.get_q_value(current_state_encoded, action)
-        new_value = old_value + self.learning_rate * (reward + self.discount_factor * best_future_reward - old_value)
-        self.q_table[(current_state_encoded, action)] = new_value
+    def update_q_table(self, game_state, action, new_game_state):
+        # this function calculated the value according to the RL formula
+        encoded_game_state = encode_board_into_one_dimension_array(game_state)
+        encoded_new_game_state = encode_board_into_one_dimension_array(new_game_state)
 
-        if state.is_done():
-            self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        old_value = (1 - self.learning_rate) * self.get_q_value(encoded_game_state, action)
+        future_values = [self.get_q_value(encoded_new_game_state, a) for a in new_game_state.get_legal_actions()]
+        best_future_value = max(future_values)
+        learned_value = calculate_reward(game_state) + self.discount_factor * self.get_q_value(encoded_new_game_state,
+                                                                                               best_future_value)
+        new_value = old_value + self.learning_rate * learned_value
+        self.q_table[(game_state, action)] = new_value
 
-    def get_action(self, state):
-        return self.choose_action(state)
+    def update_epsilon(self):
+        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
