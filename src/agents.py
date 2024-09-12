@@ -1,6 +1,11 @@
 import math
 import abc
 import random
+from collections import deque
+
+import numpy as np
+import torch
+from torch import nn, optim
 
 
 class Agent(object):
@@ -140,7 +145,7 @@ def calculate_reward(game_state):
     """
     Calculate the reward after an action has been applied.
     """
-    if game_state.check_winner() == 1:
+    if game_state.check_winner() == game_state.player_about_to_play:
         return 1  # Reward for winning
     elif game_state.is_done():
         return -1  # Penalty for losing or draw
@@ -154,7 +159,8 @@ def encode_board_into_one_dimension_array(game_state):
 
 
 class QLearningAgent(Agent):
-    def __init__(self, player_id, learning_rate=0.5, discount_factor=0.9, epsilon=1, epsilon_decay=0.95,
+    def __init__(self, player_id, learning_rate=0.5, discount_factor=0.9,
+                 epsilon=1, epsilon_decay=0.95,
                  epsilon_min=0.1):
         super().__init__(player_id)
         self.q_table = {}
@@ -189,6 +195,101 @@ class QLearningAgent(Agent):
                                                                                                best_future_value)
         new_value = old_value + self.learning_rate * learned_value
         self.q_table[(game_state, action)] = new_value
+
+    def update_epsilon(self):
+        self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
+class DeepQNetwork(nn.Module):
+    def __init__(self, state_size, action_size, learning_rate=0.001):
+        super(DeepQNetwork, self).__init__()
+        # Define the neural network structure
+        self.network = nn.Sequential(
+            nn.Linear(state_size, 256),  # First hidden layer
+            nn.ReLU(),
+            nn.Linear(256, 256),  # Second hidden layer
+            nn.ReLU(),
+            nn.Linear(256, 64),   # Third hidden layer
+            nn.ReLU(),
+            nn.Linear(64, action_size)  # Output layer
+        )
+        self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
+        self.criterion = nn.MSELoss()
+
+    def forward(self, state):
+        return self.network(state)
+
+    def update(self, states, actions, target_q_values):
+        self.optimizer.zero_grad()
+        all_predicted_q_values = self.forward(states)  # Predicts Q-values for all actions
+        action_q_values = all_predicted_q_values.gather(1, actions.unsqueeze(-1))  # Select the Q-values for the taken actions
+        loss = self.criterion(action_q_values, target_q_values)  # Compute loss between predicted Q-values of taken actions and target Q-values
+        loss.backward()
+        self.optimizer.step()
+
+class ReplayBuffer:
+    def __init__(self, capacity):
+        self.buffer = deque(maxlen=capacity)
+
+    def push(self, state, action, reward, next_state, done):
+        # States are already flattened when pushed, so just append them
+        self.buffer.append((state, action, reward, next_state, done))
+
+    def sample(self, batch_size):
+        batch = random.sample(self.buffer, batch_size)
+        state, action, reward, next_state, done = zip(*batch)
+        return (np.array(state, dtype=np.float32), np.array(action, dtype=np.int32),
+                np.array(reward, dtype=np.float32), np.array(next_state, dtype=np.float32),
+                np.array(done, dtype=np.bool_))
+
+class DQNAgent(Agent):
+    def __init__(self, player_id, state_size, action_size, replay_buffer_capacity,
+                 batch_size=64, gamma=0.99, learning_rate=0.001):
+        super().__init__(player_id)
+        self.state_size = state_size
+        self.action_size = action_size
+        self.gamma = gamma
+        self.epsilon = 1.0
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.995
+        self.batch_size = batch_size
+        self.replay_buffer = ReplayBuffer(replay_buffer_capacity)
+        self.network = DeepQNetwork(state_size, action_size, learning_rate)
+
+    def get_action(self, game_state):
+        valid_moves = game_state.get_legal_actions()
+        if np.random.rand() > self.epsilon:
+            # Flatten the board state to match the network's expected input size
+            state = torch.FloatTensor(game_state.board.board.flatten()).unsqueeze(0)  # Flattening the board
+            with torch.no_grad():
+                action_values = self.network(state)
+            valid_action_values = action_values[0, valid_moves]
+            return valid_moves[torch.argmax(valid_action_values).item()]
+        else:
+            return np.random.choice(valid_moves)
+
+
+    def store_transition(self, old_state, action, reward, next_state, done):
+        # Extract the board array from GameState and flatten it
+        old_board = old_state.board.board.flatten()  # Assuming the board is stored in a 'board' attribute
+        next_board = next_state.board.board.flatten()
+        self.replay_buffer.push(old_board, action, reward, next_board, done)
+
+    def update_NN(self):
+        if len(self.replay_buffer.buffer) < self.batch_size:
+            return  # Not enough samples to learn from
+
+        states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size)
+        states = torch.FloatTensor(states)
+        next_states = torch.FloatTensor(next_states)
+        actions = torch.LongTensor(actions)
+        rewards = torch.FloatTensor(rewards)
+        dones = torch.FloatTensor(dones)
+
+        current_q_values = self.network(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+        next_q_values = self.network(next_states).detach().max(1)[0]
+        target_q_values = rewards + self.gamma * next_q_values * (1 - dones)
+
+        self.network.update(states, actions, target_q_values.unsqueeze(1))  # Pass actions to the update method
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
