@@ -77,8 +77,7 @@ class GameState(object):
         return False
 
     def generate_successor(self, action):
-        successor = GameState(board=self.board.copy(),
-                              done=self.done, player_about_to_play=self.player_about_to_play)
+        successor = self.deepcopy()
         successor.apply_action(action)
         return successor
 

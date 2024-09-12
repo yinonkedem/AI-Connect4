@@ -11,7 +11,8 @@ class Agent(object):
     This is an abstract class that should not be instantiated directly.
     """
 
-    def __init__(self, evaluation_function=None, depth=2):
+    def __init__(self, player_id, evaluation_function=None, depth=0):
+        self.player_id = player_id
         self.depth = depth
         self.evaluation_function = evaluation_function
 
@@ -21,34 +22,33 @@ class Agent(object):
 
 
 class RandomAgent(Agent):
-    def __init__(self):
-        super().__init__(evaluation_function=None, depth=0)
+    def __init__(self, player_id):
+        super().__init__(player_id, evaluation_function=None, depth=0)
 
     def get_action(self, game_state):
         return random.choice(game_state.board.get_valid_moves())
 
 
-def minimax_evaluation_function(game_state):
-    score = 0
-    max_consecutive_range = calculate_current_player_max_consecutive_range(game_state)
+def minimax_evaluation_function(game_state, player_id):
+    if game_state.done:
+        if game_state.winner == player_id:
+            return 1000000
+        else:
+            return -1000000
+    max_consecutive_range = calculate_player_max_consecutive_range(game_state, game_state.player_about_to_play)
     winning_combination = approximate_number_of_future_winning_combinations(game_state)
-    if max_consecutive_range == 4:
-        score = math.inf
-    else:
-        score = 10 ** max_consecutive_range
-    return 0.5 * max_consecutive_range + 0.5 * winning_combination
+    return 0.5*winning_combination + max_consecutive_range
 
 
-def calculate_current_player_max_consecutive_range(game_state):
+def calculate_player_max_consecutive_range(game_state, player):
     max_consecutive_range = 0
     for row in range(game_state.num_of_rows):
         for col in range(game_state.num_of_columns):
-            val = 0
             directions = [(0, 1), (1, 0), (1, 1), (1, -1)]
             for dr, dc in directions:
-                val = max(val, game_state.board.count_consecutive_pieces(row, col, dr, dc,
-                                                                         game_state.player_about_to_play))
-            max_consecutive_range = max(max_consecutive_range, val)
+                max_consecutive_range = max(max_consecutive_range,
+                                            game_state.board.count_consecutive_pieces(row, col, dr, dc,
+                                                                                      player))
     return max_consecutive_range
 
 
@@ -72,12 +72,12 @@ def approximate_number_of_future_winning_combinations(game_state):
                 lines.append([(row + i, col + i) for i in range(4)])
 
     def evaluate_spot(row, col):
-        if game_state.board.get_player(row, col) == 1:
+        if game_state.board.get_player(row, col) == game_state.player_about_to_play:
             return 1
-        elif game_state.board.get_player(row, col) == 2:
-            return -1
-        else:
+        elif game_state.board.get_player(row, col) == 0:
             return 0
+        else:
+            return -1
 
     res = 0
     lines = []
@@ -90,6 +90,9 @@ def approximate_number_of_future_winning_combinations(game_state):
 
 
 class MinmaxAgentWithPruning(Agent):
+    def __init__(self, player_id):
+        super().__init__(player_id, evaluation_function=minimax_evaluation_function, depth=2)
+
     def get_action(self, game_state):
         """
         Returns the minimax action from the current gameState using self.depth
@@ -98,8 +101,7 @@ class MinmaxAgentWithPruning(Agent):
 
         def helper(game_state, agent, depth, alpha, beta):
             if depth == 0 or game_state.done:
-                return self.evaluation_function(game_state), None
-
+                return self.evaluation_function(game_state, self.player_id), None
             if agent == 1:
                 max_val = -math.inf
                 best_action = None
@@ -151,9 +153,10 @@ def encode_board_into_one_dimension_array(game_state):
     return state
 
 
-class QLearningAgent:
-    def __init__(self, learning_rate=0.01, discount_factor=0.9,
-                 epsilon=0.3, epsilon_decay=0.995, epsilon_min=0.01):
+class QLearningAgent(Agent):
+    def __init__(self, player_id, learning_rate=0.5, discount_factor=0.9, epsilon=1, epsilon_decay=0.95,
+                 epsilon_min=0.1):
+        super().__init__(player_id)
         self.q_table = {}
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
@@ -181,7 +184,7 @@ class QLearningAgent:
 
         old_value = (1 - self.learning_rate) * self.get_q_value(encoded_game_state, action)
         future_values = [self.get_q_value(encoded_new_game_state, a) for a in new_game_state.get_legal_actions()]
-        best_future_value = max(future_values)
+        best_future_value = max(future_values)if future_values else 0
         learned_value = calculate_reward(game_state) + self.discount_factor * self.get_q_value(encoded_new_game_state,
                                                                                                best_future_value)
         new_value = old_value + self.learning_rate * learned_value
