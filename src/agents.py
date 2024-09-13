@@ -16,10 +16,11 @@ class Agent(object):
     This is an abstract class that should not be instantiated directly.
     """
 
-    def __init__(self, player_id, evaluation_function=None, depth=0):
+    def __init__(self, tag, player_id, evaluation_function=None, depth=0):
         self.player_id = player_id
         self.depth = depth
         self.evaluation_function = evaluation_function
+        self.tag = tag
 
     @abc.abstractmethod
     def get_action(self, game_state):
@@ -27,8 +28,8 @@ class Agent(object):
 
 
 class RandomAgent(Agent):
-    def __init__(self, player_id):
-        super().__init__(player_id, evaluation_function=None, depth=0)
+    def __init__(self, tag, player_id):
+        super().__init__(tag, player_id, evaluation_function=None, depth=0)
 
     def get_action(self, game_state):
         return random.choice(game_state.board.get_valid_moves())
@@ -95,8 +96,8 @@ def approximate_number_of_future_winning_combinations(game_state):
 
 
 class MinmaxAgentWithPruning(Agent):
-    def __init__(self, player_id):
-        super().__init__(player_id, evaluation_function=minimax_evaluation_function, depth=2)
+    def __init__(self, tag,  player_id):
+        super().__init__(tag, player_id, evaluation_function=minimax_evaluation_function, depth=2)
 
     def get_action(self, game_state):
         """
@@ -159,10 +160,10 @@ def encode_board_into_one_dimension_array(game_state):
 
 
 class QLearningAgent(Agent):
-    def __init__(self, player_id, learning_rate=0.5, discount_factor=0.9,
+    def __init__(self, tag, player_id, learning_rate=0.5, discount_factor=0.9,
                  epsilon=1, epsilon_decay=0.95,
                  epsilon_min=0.1):
-        super().__init__(player_id)
+        super().__init__(tag, player_id)
         self.q_table = {}
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
@@ -242,9 +243,9 @@ class ReplayBuffer:
                 np.array(done, dtype=np.bool_))
 
 class DQNAgent(Agent):
-    def __init__(self, player_id, state_size, action_size, replay_buffer_capacity,
+    def __init__(self, tag, player_id, state_size, action_size, replay_buffer_capacity,
                  batch_size=64, gamma=0.99, learning_rate=0.001):
-        super().__init__(player_id)
+        super().__init__(tag, player_id)
         self.state_size = state_size
         self.action_size = action_size
         self.gamma = gamma
