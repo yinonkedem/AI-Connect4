@@ -2,7 +2,6 @@ import math
 import abc
 import random
 from collections import deque
-
 import numpy as np
 import torch
 from torch import nn, optim
@@ -43,7 +42,7 @@ def minimax_evaluation_function(game_state, player_id):
             return -1000000
     max_consecutive_range = calculate_player_max_consecutive_range(game_state, game_state.player_about_to_play)
     winning_combination = approximate_number_of_future_winning_combinations(game_state)
-    return 0.5*winning_combination + max_consecutive_range
+    return 0.5 * winning_combination + max_consecutive_range
 
 
 def calculate_player_max_consecutive_range(game_state, player):
@@ -96,7 +95,7 @@ def approximate_number_of_future_winning_combinations(game_state):
 
 
 class MinmaxAgentWithPruning(Agent):
-    def __init__(self, tag,  player_id):
+    def __init__(self, tag, player_id):
         super().__init__(tag, player_id, evaluation_function=minimax_evaluation_function, depth=2)
 
     def get_action(self, game_state):
@@ -191,15 +190,16 @@ class QLearningAgent(Agent):
 
         old_value = (1 - self.learning_rate) * self.get_q_value(encoded_game_state, action)
         future_values = [self.get_q_value(encoded_new_game_state, a) for a in new_game_state.get_legal_actions()]
-        best_future_value = max(future_values)if future_values else 0
+        best_future_value = max(future_values) if future_values else 0
         learned_value = calculate_reward(game_state) + \
                         self.discount_factor * \
-                        self.get_q_value(encoded_new_game_state,best_future_value)
+                        self.get_q_value(encoded_new_game_state, best_future_value)
         new_value = old_value + self.learning_rate * learned_value
         self.q_table[(game_state, action)] = new_value
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+
 
 class DeepQNetwork(nn.Module):
     def __init__(self, state_size, action_size, learning_rate=0.001):
@@ -228,6 +228,7 @@ class DeepQNetwork(nn.Module):
         loss = (losses * weights).mean()  # Apply weights and then mean
         loss.backward()
         self.optimizer.step()
+
 
 class ReplayBuffer:
     def __init__(self, capacity, alpha=0.6):
@@ -261,11 +262,14 @@ class ReplayBuffer:
         return (np.array(states, dtype=np.float32), np.array(actions, dtype=np.int32),
                 np.array(rewards, dtype=np.float32), np.array(next_states, dtype=np.float32),
                 np.array(dones, dtype=np.bool_)), indices, weights
+
     def update_priorities(self, indices, errors):
         # Update priorities based on TD errors
         for idx, error in zip(indices, errors):
-            self.priorities[idx] = (abs(error) + 1e-5) ** self.alpha  # Increment priority slightly to ensure no zero priority
+            self.priorities[idx] = (
+                                           abs(error) + 1e-5) ** self.alpha  # Increment priority slightly to ensure no zero priority
             self.max_priority = max(self.max_priority, self.priorities[idx])
+
 
 class DQNAgent(Agent):
     def __init__(self, tag, player_id, state_size=42, action_size=7, replay_buffer_capacity=30000,
@@ -293,7 +297,6 @@ class DQNAgent(Agent):
         else:
             return np.random.choice(valid_moves)
 
-
     def store_transition(self, old_state, action, next_state, done):
         reward = calculate_reward(next_state)
         # Extract the board array from GameState and flatten it
@@ -306,7 +309,8 @@ class DQNAgent(Agent):
             return  # Not enough samples to learn from
 
         # Sample from the prioritized replay buffer and get IS weights
-        (states, actions, rewards, next_states, dones), indices, weights = self.replay_buffer.sample(self.batch_size, beta=0.4)
+        (states, actions, rewards, next_states, dones), indices, weights = self.replay_buffer.sample(self.batch_size,
+                                                                                                     beta=0.4)
         states = torch.FloatTensor(states)
         next_states = torch.FloatTensor(next_states)
         actions = torch.LongTensor(actions)

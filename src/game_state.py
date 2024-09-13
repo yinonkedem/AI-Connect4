@@ -1,6 +1,4 @@
 import copy
-
-import numpy as np
 from board import Board
 
 
@@ -26,15 +24,11 @@ class GameState(object):
         return self.done
 
     def check_winner(self):
-        # This is a simplified check for horizontal lines only
-        for row in range(6):  # Assuming board height is 6
+        for row in range(6):
             for col in range(4):  # Only need to check starting columns 0 through 3 for horizontal win
                 if (self.board.board[row, col] == self.board.board[row, col + 1] ==
                         self.board.board[row, col + 2] == self.board.board[row, col + 3] != 0):
                     return self.board.board[row, col]  # Return the player number that won
-
-        # Add similar checks for vertical and diagonal wins here
-
         return 0  # Return 0 if no winner found
 
     def current_player(self):

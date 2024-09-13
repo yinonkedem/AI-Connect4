@@ -1,4 +1,3 @@
-import copy
 from game_state import GameState
 
 
@@ -39,7 +38,7 @@ class Game(object):
 
             # Store the transition in the DQN agent's replay buffer
             agent.store_transition(old_state, action, self.state,
-                                        self.state.is_done())
+                                   self.state.is_done())
 
             # Perform a learning step if there are enough samples in the replay buffer
             if len(agent.replay_buffer.buffer) >= agent.batch_size:

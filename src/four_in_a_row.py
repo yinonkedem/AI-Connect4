@@ -1,8 +1,5 @@
-import copy
-
 from agents import *
 from game_state import GameState
-
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
@@ -86,24 +83,27 @@ if __name__ == '__main__':
     agent_tag = validate_tag(sys.argv[2])
     opponent_tag = validate_tag(sys.argv[3])
 
-    # Initialize agents with IDs based on input order
-    agents = {
-        'deepq': DQNAgent('DeepQ-Learning', 0),  # Placeholder for ID
-        'q-learning': QLearningAgent('q-Learning', 0),  # Placeholder for ID
-        'minimax': MinmaxAgentWithPruning('MiniMax', 0),  # Placeholder for ID
-        'random': RandomAgent('Random', 0)  # Placeholder for ID
-    }
+    # Initialize agents with IDs using if-elif-else
+    def initialize_agent(tag, id):
+        if tag == 'deepq':
+            return DQNAgent('DeepQ-Learning', id)
+        elif tag == 'q-learning':
+            return QLearningAgent('q-Learning', id)
+        elif tag == 'minimax':
+            return MinmaxAgentWithPruning('MiniMax', id)
+        elif tag == 'random':
+            return RandomAgent('Random', id)
+        else:
+            raise ValueError(f"Unknown agent type: {agent_tag}")
 
-    # Assign IDs based on the order in which they are specified
-    agents[agent_tag].id = 1
-    agents[opponent_tag].id = 2
 
-    agent = agents[agent_tag]
-    opponent = agents[opponent_tag]
+    # Initialize agents
+    agent = initialize_agent(agent_tag, 1)
+    opponent = initialize_agent(opponent_tag, 0)
 
     # Simulate games
     print("Simulating games...")
-    win_rates = simulate_games(num_games, agent, opponent, num_games//10)
+    win_rates = simulate_games(num_games, agent, opponent, num_games // 10)
 
     # Plot the results of the simulation
     print("Plotting results...")
