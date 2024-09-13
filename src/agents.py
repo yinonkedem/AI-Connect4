@@ -192,8 +192,9 @@ class QLearningAgent(Agent):
         old_value = (1 - self.learning_rate) * self.get_q_value(encoded_game_state, action)
         future_values = [self.get_q_value(encoded_new_game_state, a) for a in new_game_state.get_legal_actions()]
         best_future_value = max(future_values)if future_values else 0
-        learned_value = calculate_reward(game_state) + self.discount_factor * self.get_q_value(encoded_new_game_state,
-                                                                                               best_future_value)
+        learned_value = calculate_reward(game_state) + \
+                        self.discount_factor * \
+                        self.get_q_value(encoded_new_game_state,best_future_value)
         new_value = old_value + self.learning_rate * learned_value
         self.q_table[(game_state, action)] = new_value
 
@@ -206,11 +207,11 @@ class DeepQNetwork(nn.Module):
         # Define the neural network structure
         self.network = nn.Sequential(
             nn.Linear(state_size, 256),  # First hidden layer
-            nn.ReLU(),
-            nn.Linear(256, 256),  # Second hidden layer
-            nn.ReLU(),
-            nn.Linear(256, 64),   # Third hidden layer
-            nn.ReLU(),
+            nn.LeakyReLU(),
+            nn.Linear(256, 128),
+            nn.LeakyReLU(),
+            nn.Linear(128, 64),
+            nn.LeakyReLU(),
             nn.Linear(64, action_size)  # Output layer
         )
         self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
@@ -219,31 +220,55 @@ class DeepQNetwork(nn.Module):
     def forward(self, state):
         return self.network(state)
 
-    def update(self, states, actions, target_q_values):
+    def update(self, states, actions, target_q_values, weights):
         self.optimizer.zero_grad()
-        all_predicted_q_values = self.forward(states)  # Predicts Q-values for all actions
-        action_q_values = all_predicted_q_values.gather(1, actions.unsqueeze(-1))  # Select the Q-values for the taken actions
-        loss = self.criterion(action_q_values, target_q_values)  # Compute loss between predicted Q-values of taken actions and target Q-values
+        all_predicted_q_values = self.forward(states)
+        action_q_values = all_predicted_q_values.gather(1, actions.unsqueeze(-1)).squeeze(-1)
+        losses = self.criterion(action_q_values, target_q_values.squeeze(-1))  # Calculate loss for each element
+        loss = (losses * weights).mean()  # Apply weights and then mean
         loss.backward()
         self.optimizer.step()
 
 class ReplayBuffer:
-    def __init__(self, capacity):
+    def __init__(self, capacity, alpha=0.6):
+        self.alpha = alpha  # How much prioritization is used, 0 corresponds to no prioritization (uniform probability)
+        self.capacity = capacity
         self.buffer = deque(maxlen=capacity)
+        self.priorities = deque(maxlen=capacity)  # To store priorities of each experience
+        self.max_priority = 1.0  # Start with a high priority for new experiences to ensure they are sampled at least once
 
     def push(self, state, action, reward, next_state, done):
         # States are already flattened when pushed, so just append them
         self.buffer.append((state, action, reward, next_state, done))
+        self.priorities.append(self.max_priority)
 
-    def sample(self, batch_size):
-        batch = random.sample(self.buffer, batch_size)
-        state, action, reward, next_state, done = zip(*batch)
-        return (np.array(state, dtype=np.float32), np.array(action, dtype=np.int32),
-                np.array(reward, dtype=np.float32), np.array(next_state, dtype=np.float32),
-                np.array(done, dtype=np.bool_))
+    def sample(self, batch_size, beta=0.4):
+        # Convert priorities to probabilities
+        scaled_priorities = np.array(self.priorities) ** self.alpha
+        sample_probs = scaled_priorities / sum(scaled_priorities)
+
+        # Sample experiences based on their priority probabilities
+        indices = random.choices(range(len(self.buffer)), weights=sample_probs, k=batch_size)
+        experiences = [self.buffer[idx] for idx in indices]
+
+        # Calculate importance-sampling weights
+        total = len(self.buffer)
+        weights = (total * np.array(sample_probs)[indices]) ** (-beta)
+        weights /= weights.max()  # Normalize for numerical stability
+
+        # Unzip experiences
+        states, actions, rewards, next_states, dones = zip(*experiences)
+        return (np.array(states, dtype=np.float32), np.array(actions, dtype=np.int32),
+                np.array(rewards, dtype=np.float32), np.array(next_states, dtype=np.float32),
+                np.array(dones, dtype=np.bool_)), indices, weights
+    def update_priorities(self, indices, errors):
+        # Update priorities based on TD errors
+        for idx, error in zip(indices, errors):
+            self.priorities[idx] = (abs(error) + 1e-5) ** self.alpha  # Increment priority slightly to ensure no zero priority
+            self.max_priority = max(self.max_priority, self.priorities[idx])
 
 class DQNAgent(Agent):
-    def __init__(self, tag, player_id, state_size, action_size, replay_buffer_capacity,
+    def __init__(self, tag, player_id, state_size=42, action_size=7, replay_buffer_capacity=30000,
                  batch_size=64, gamma=0.99, learning_rate=0.001):
         super().__init__(tag, player_id)
         self.state_size = state_size
@@ -269,7 +294,8 @@ class DQNAgent(Agent):
             return np.random.choice(valid_moves)
 
 
-    def store_transition(self, old_state, action, reward, next_state, done):
+    def store_transition(self, old_state, action, next_state, done):
+        reward = calculate_reward(next_state)
         # Extract the board array from GameState and flatten it
         old_board = old_state.board.board.flatten()  # Assuming the board is stored in a 'board' attribute
         next_board = next_state.board.board.flatten()
@@ -279,18 +305,22 @@ class DQNAgent(Agent):
         if len(self.replay_buffer.buffer) < self.batch_size:
             return  # Not enough samples to learn from
 
-        states, actions, rewards, next_states, dones = self.replay_buffer.sample(self.batch_size)
+        # Sample from the prioritized replay buffer and get IS weights
+        (states, actions, rewards, next_states, dones), indices, weights = self.replay_buffer.sample(self.batch_size, beta=0.4)
         states = torch.FloatTensor(states)
         next_states = torch.FloatTensor(next_states)
         actions = torch.LongTensor(actions)
         rewards = torch.FloatTensor(rewards)
         dones = torch.FloatTensor(dones)
+        weights = torch.FloatTensor(weights)
 
+        # Compute current Q values and next Q values
         current_q_values = self.network(states).gather(1, actions.unsqueeze(1)).squeeze(1)
         next_q_values = self.network(next_states).detach().max(1)[0]
         target_q_values = rewards + self.gamma * next_q_values * (1 - dones)
 
-        self.network.update(states, actions, target_q_values.unsqueeze(1))  # Pass actions to the update method
+        # Update the network with the new update method
+        self.network.update(states, actions, target_q_values.unsqueeze(1), weights)
 
     def update_epsilon(self):
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)

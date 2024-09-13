@@ -1,6 +1,5 @@
 import copy
 from game_state import GameState
-from src.agents import calculate_reward
 
 
 class Game(object):
@@ -28,24 +27,23 @@ class Game(object):
 
     def agentAction(self, agent):
         if agent.tag == 'q-Learning':
-            action = self.agent.get_action(self.state)  # get the agent's chosen action for the current state
+            action = agent.get_action(self.state)  # get the agent's chosen action for the current state
             old_state = self.state.deepcopy()
             self.state.apply_action(action)
-            self.agent.update_q_table(old_state, action, self.state)
+            agent.update_q_table(old_state, action, self.state)
 
         elif agent.tag == 'DeepQ-Learning':
-            action = self.agent.get_action(self.state)  # get the agent's chosen action for the current state
+            action = agent.get_action(self.state)  # get the agent's chosen action for the current state
             old_state = self.state.deepcopy()
             self.state.apply_action(action)
 
             # Store the transition in the DQN agent's replay buffer
-            self.agent.store_transition(old_state, action,
-                                        calculate_reward(self.state), self.state,
+            agent.store_transition(old_state, action, self.state,
                                         self.state.is_done())
 
             # Perform a learning step if there are enough samples in the replay buffer
-            if len(self.agent.replay_buffer.buffer) >= self.agent.batch_size:
-                self.agent.update_NN()
+            if len(agent.replay_buffer.buffer) >= agent.batch_size:
+                agent.update_NN()
         else:
-            opponent_action = self.opponent_agent.get_action(self.state)
-            self.state.apply_action(opponent_action)
+            act = agent.get_action(self.state)
+            self.state.apply_action(act)
